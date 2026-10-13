@@ -1028,64 +1028,71 @@ export default function AdminDashboardPage() {
 
       {/* MODAL 1: EDIT / UPDATE PRODUCT CARD */}
       {isEditProductOpen && editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-hidden">
           <div
             onClick={() => setIsEditProductOpen(false)}
             className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
-          <div className="relative w-full max-w-4xl bg-zinc-900 border border-zinc-700 shadow-2xl rounded-3xl p-6 sm:p-8 z-10 text-white my-8">
-            <button
-              onClick={() => setIsEditProductOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="mb-6">
-              <span className="text-xs font-mono text-blue-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>UPDATE PRODUCT CARD</span>
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-black text-white font-mono">
-                EDIT T-SHIRT DETAILS
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Update prices, discount strikethrough, stock, and front/back image URLs.
-              </p>
-            </div>
-
-            {/* Tab Switcher: Card vs Sub-Page */}
-            <div className="flex items-center gap-2 p-1 rounded-2xl bg-zinc-950 border border-zinc-800 mb-6">
+          <div className="relative w-full max-w-4xl bg-zinc-900 border border-zinc-700 shadow-2xl rounded-2xl sm:rounded-3xl z-10 text-white flex flex-col max-h-[92vh] overflow-hidden">
+            {/* PINNED HEADER - Always visible and never cut off */}
+            <div className="flex-shrink-0 p-5 sm:p-6 border-b border-zinc-800 bg-zinc-900 relative">
               <button
                 type="button"
-                onClick={() => setEditModalTab('card')}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  editModalTab === 'card'
-                    ? 'bg-zinc-800 text-white shadow-xs'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
+                onClick={() => setIsEditProductOpen(false)}
+                className="absolute top-4 right-4 sm:top-5 sm:right-5 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Close"
               >
-                <Layers className="w-3.5 h-3.5 text-blue-400" />
-                <span>1. Card Main Settings</span>
+                <X className="w-5 h-5" />
               </button>
-              <button
-                type="button"
-                onClick={() => setEditModalTab('subpage')}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  editModalTab === 'subpage'
-                    ? 'bg-zinc-800 text-white shadow-xs'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-                <span>2. T-Shirt Sub-Page Details</span>
-              </button>
+
+              <div className="pr-10">
+                <span className="text-[11px] font-mono text-blue-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>UPDATE PRODUCT CARD</span>
+                </span>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono leading-tight">
+                  EDIT T-SHIRT DETAILS
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5 hidden sm:block">
+                  Update prices, discount strikethrough, stock, and front/back image URLs.
+                </p>
+              </div>
+
+              {/* Tab Switcher: Card vs Sub-Page */}
+              <div className="flex items-center gap-2 p-1 rounded-2xl bg-zinc-950 border border-zinc-800 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditModalTab('card')}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    editModalTab === 'card'
+                      ? 'bg-zinc-800 text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-blue-400" />
+                  <span>1. Card Main Settings</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditModalTab('subpage')}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    editModalTab === 'subpage'
+                      ? 'bg-zinc-800 text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                  <span>2. T-Shirt Sub-Page Details</span>
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleUpdateProduct} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Form Inputs (7 Cols) */}
-              <div className="lg:col-span-7 space-y-4">
+            {/* SCROLLABLE FORM BODY */}
+            <form onSubmit={handleUpdateProduct} className="flex-1 overflow-y-auto p-5 sm:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Form Inputs (7 Cols) */}
+                <div className="lg:col-span-7 space-y-4">
                 {editModalTab === 'card' ? (
                   <>
                     {/* T-Shirt Name */}
@@ -1386,7 +1393,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Right Column: Live Card Preview (5 Cols) */}
-              <div className="lg:col-span-5 flex flex-col justify-between">
+              <div className="lg:col-span-5 flex flex-col justify-between lg:sticky lg:top-0 h-fit">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-mono text-zinc-400 uppercase font-bold">
@@ -1465,70 +1472,78 @@ export default function AdminDashboardPage() {
                   Updates persist to Supabase and show up on the store immediately.
                 </p>
               </div>
-            </form>
+            </div>
+          </form>
           </div>
         </div>
       )}
 
       {/* MODAL 2: ADD NEW T-SHIRT DROP (URL ONLY) */}
       {isAddProductOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-hidden">
           <div
             onClick={() => setIsAddProductOpen(false)}
             className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
-          <div className="relative w-full max-w-4xl bg-zinc-900 border border-zinc-700 shadow-2xl rounded-3xl p-6 sm:p-8 z-10 text-white my-8">
-            <button
-              onClick={() => setIsAddProductOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="mb-6">
-              <span className="text-xs font-mono text-rose-500 font-bold uppercase tracking-wider">
-                YOKAI WEAR // NEW DROP CREATOR
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-black text-white font-mono">
-                ADD NEW T-SHIRT
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Paste image URLs for front & back views, set pricing with automatic discount calculation, and publish live.
-              </p>
-            </div>
-
-            {/* Tab Switcher: Card vs Sub-Page */}
-            <div className="flex items-center gap-2 p-1 rounded-2xl bg-zinc-950 border border-zinc-800 mb-6">
+          <div className="relative w-full max-w-4xl bg-zinc-900 border border-zinc-700 shadow-2xl rounded-2xl sm:rounded-3xl z-10 text-white flex flex-col max-h-[92vh] overflow-hidden">
+            {/* PINNED HEADER - Always visible and never cut off */}
+            <div className="flex-shrink-0 p-5 sm:p-6 border-b border-zinc-800 bg-zinc-900 relative">
               <button
                 type="button"
-                onClick={() => setAddModalTab('card')}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  addModalTab === 'card'
-                    ? 'bg-zinc-800 text-white shadow-xs'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
+                onClick={() => setIsAddProductOpen(false)}
+                className="absolute top-4 right-4 sm:top-5 sm:right-5 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Close"
               >
-                <Layers className="w-3.5 h-3.5 text-rose-400" />
-                <span>1. Card Main Settings</span>
+                <X className="w-5 h-5" />
               </button>
-              <button
-                type="button"
-                onClick={() => setAddModalTab('subpage')}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  addModalTab === 'subpage'
-                    ? 'bg-zinc-800 text-white shadow-xs'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-                <span>2. T-Shirt Sub-Page Details</span>
-              </button>
+
+              <div className="pr-10">
+                <span className="text-[11px] font-mono text-rose-500 font-bold uppercase tracking-wider">
+                  YOKAI WEAR // NEW DROP CREATOR
+                </span>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono leading-tight">
+                  ADD NEW T-SHIRT
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5 hidden sm:block">
+                  Paste image URLs for front & back views, set pricing with automatic discount calculation, and publish live.
+                </p>
+              </div>
+
+              {/* Tab Switcher: Card vs Sub-Page */}
+              <div className="flex items-center gap-2 p-1 rounded-2xl bg-zinc-950 border border-zinc-800 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setAddModalTab('card')}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    addModalTab === 'card'
+                      ? 'bg-zinc-800 text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-rose-400" />
+                  <span>1. Card Main Settings</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddModalTab('subpage')}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    addModalTab === 'subpage'
+                      ? 'bg-zinc-800 text-white shadow-xs'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                  <span>2. T-Shirt Sub-Page Details</span>
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Form Inputs (7 Cols) */}
-              <div className="lg:col-span-7 space-y-4">
+            {/* SCROLLABLE FORM BODY */}
+            <form onSubmit={handleCreateProduct} className="flex-1 overflow-y-auto p-5 sm:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Form Inputs (7 Cols) */}
+                <div className="lg:col-span-7 space-y-4">
                 {addModalTab === 'card' ? (
                   <>
                     {/* T-Shirt Name */}
@@ -1843,7 +1858,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Right Column: Live Card Preview (5 Cols) */}
-              <div className="lg:col-span-5 flex flex-col justify-between">
+              <div className="lg:col-span-5 flex flex-col justify-between lg:sticky lg:top-0 h-fit">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-mono text-zinc-400 uppercase font-bold">
@@ -1922,7 +1937,8 @@ export default function AdminDashboardPage() {
                   Saves directly into Supabase table `products`.
                 </p>
               </div>
-            </form>
+            </div>
+          </form>
           </div>
         </div>
       )}

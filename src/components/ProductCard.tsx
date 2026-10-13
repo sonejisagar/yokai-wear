@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Heart, Sparkles, Check, Flame, Layers } from 'lucide-react';
+import { ShoppingBag, Sparkles, Check, Flame, Layers } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 
@@ -12,7 +12,6 @@ export default function ProductCard({ product }: { product: Product }) {
   const [selectedColor, setSelectedColor] = useState(product.colors[0]);
   const [isHovered, setIsHovered] = useState(false);
   const [showBackView, setShowBackView] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
 
   const discountPercent =
@@ -91,18 +90,6 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {/* Frosted Wishlist Button */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsLiked(!isLiked);
-          }}
-          className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 p-2 rounded-full bg-white/85 backdrop-blur-md border border-white text-zinc-500 hover:text-rose-500 transition-all z-10 shadow-xs cursor-pointer"
-          aria-label="Save to wishlist"
-        >
-          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
-        </button>
 
         {/* Frosted Graphic Switcher Pill */}
         <div className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 z-10">

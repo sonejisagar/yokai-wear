@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingBag,
   Search,
-  Heart,
   User,
   Menu,
   X,
@@ -31,7 +30,6 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [wishlistCount, setWishlistCount] = useState(2);
   const { totalItems, setIsCartOpen } = useCart();
 
   if (pathname?.startsWith('/admin')) {
@@ -55,10 +53,10 @@ export default function Navbar() {
             : 'bg-white/60 backdrop-blur-xl border-b border-white/70 py-3 sm:py-4 shadow-xs shadow-zinc-900/[0.02]'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
             {/* Mobile Hamburger Button */}
-            <div className="flex items-center lg:hidden">
+            <div className="flex items-center lg:hidden flex-shrink-0">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 -ml-1 rounded-2xl text-zinc-700 hover:text-black bg-white/70 hover:bg-white border border-white/90 shadow-xs transition-colors cursor-pointer"
@@ -75,22 +73,22 @@ export default function Navbar() {
             {/* Brand Logo: YOKAI WEAR (Pure Minimalist Frosted Look) */}
             <Link
               href="/"
-              className="flex items-center gap-2.5 group select-none"
+              className="flex items-center gap-2 group select-none flex-shrink-0 min-w-0"
             >
-              <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-white/90 border border-white shadow-sm flex items-center justify-center transition-all group-hover:scale-105">
-                <span className="font-black text-rose-600 text-base sm:text-lg">
+              <div className="relative w-7 h-7 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-white/90 border border-white shadow-sm flex items-center justify-center transition-all group-hover:scale-105 flex-shrink-0">
+                <span className="font-black text-rose-600 text-sm sm:text-lg">
                   Y
                 </span>
               </div>
 
               <div className="flex flex-col">
-                <span className="font-black text-base sm:text-xl tracking-tight text-zinc-900 flex items-center gap-1 font-mono">
+                <span className="font-black text-sm sm:text-xl tracking-tight text-zinc-900 flex items-center gap-1 font-mono whitespace-nowrap">
                   YOKAI<span className="text-rose-500">.</span>WEAR
-                  <span className="text-[9px] font-sans font-bold bg-rose-50 text-rose-600 border border-rose-200/60 px-1.5 py-0.2 rounded-full ml-1 tracking-wider uppercase">
+                  <span className="text-[8px] sm:text-[9px] font-sans font-bold bg-rose-50 text-rose-600 border border-rose-200/60 px-1.5 py-0.2 rounded-full ml-0.5 tracking-wider uppercase hidden xs:inline-block">
                     DROP 01
                   </span>
                 </span>
-                <span className="text-[8px] sm:text-[9px] uppercase tracking-widest text-zinc-400 -mt-0.5 font-mono hidden xs:block">
+                <span className="text-[8px] sm:text-[9px] uppercase tracking-widest text-zinc-400 -mt-0.5 font-mono hidden sm:block">
                   Refined Anime Streetwear • 240+ GSM
                 </span>
               </div>
@@ -131,33 +129,20 @@ export default function Navbar() {
               ))}
             </nav>
 
-            {/* Right Action Icons: Search, Wishlist, Cart */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Right Action Icons: Search & Cart (Bag) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               {/* Search button */}
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-2xl text-zinc-600 hover:text-zinc-950 bg-white/70 hover:bg-white border border-white/90 shadow-xs transition-all text-xs group cursor-pointer"
+                className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-2xl text-zinc-600 hover:text-zinc-950 bg-white/70 hover:bg-white border border-white/90 shadow-xs transition-all text-xs group cursor-pointer flex-shrink-0"
                 title="Search Tees"
+                aria-label="Search"
               >
                 <Search className="w-4 h-4 text-zinc-500 group-hover:text-zinc-900 transition-transform group-hover:scale-110" />
                 <span className="hidden sm:inline-block text-xs font-medium text-zinc-700">Search</span>
               </button>
 
-              {/* Wishlist Button */}
-              <button
-                onClick={() => setWishlistCount((prev) => (prev > 0 ? prev : 1))}
-                className="relative p-2 rounded-2xl text-zinc-600 hover:text-rose-600 bg-white/70 hover:bg-white border border-white/90 shadow-xs transition-all group cursor-pointer"
-                aria-label="Wishlist"
-              >
-                <Heart className="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform group-hover:scale-110" />
-                {wishlistCount > 0 && (
-                  <span className="absolute top-1 right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold flex items-center justify-center shadow-xs">
-                    {wishlistCount}
-                  </span>
-                )}
-              </button>
-
-              {/* User Account / Login */}
+              {/* User Account / Login (Desktop only) */}
               <button
                 onClick={() => alert('Supabase Auth: Sign in with your phone / email to track your Yokai Wear orders!')}
                 className="p-2 rounded-2xl text-zinc-600 hover:text-zinc-950 bg-white/70 hover:bg-white border border-white/90 shadow-xs transition-all hidden md:flex items-center justify-center cursor-pointer"
@@ -167,12 +152,12 @@ export default function Navbar() {
                 <User className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
               </button>
 
-              {/* Animated Cart Button */}
+              {/* Animated Cart / Bag Button (Full, never cut off) */}
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => setIsCartOpen(true)}
-                className="relative flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-zinc-950 text-white font-bold text-xs sm:text-sm hover:bg-zinc-800 transition-all shadow-sm shadow-zinc-950/20 cursor-pointer ml-0.5"
+                className="relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-zinc-950 text-white font-bold text-xs sm:text-sm hover:bg-zinc-800 transition-all shadow-sm shadow-zinc-950/20 cursor-pointer flex-shrink-0"
                 aria-label="Open cart"
               >
                 <div className="relative">

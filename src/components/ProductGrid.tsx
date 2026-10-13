@@ -103,10 +103,10 @@ export default function ProductGrid() {
         })}
       </div>
 
-      {/* Product Grid: 1 col on mobile, 2 cols on tablet, 3 cols on desktop for a spacious luxury feel */}
+      {/* Product Grid: 2 cols on mobile, 3 cols on desktop for a modern streetwear shopping experience */}
       <motion.div
         layout
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7"
+        className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-7"
       >
         <AnimatePresence>
           {filteredProducts.map((product) => (

@@ -29,10 +29,18 @@ import {
   DollarSign,
   AlertCircle,
   Sparkles,
+  Ruler,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useProducts } from '@/context/ProductContext';
 import { Product } from '@/types';
+import {
+  parseProductDetails,
+  packProductDetails,
+  DEFAULT_SIZES,
+  DEFAULT_FEATURES,
+  DEFAULT_CARE,
+} from '@/utils/productDetails';
 
 interface OrderItem {
   id: string;
@@ -79,6 +87,7 @@ export default function AdminDashboardPage() {
 
   // Add Product Modal State
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [addModalTab, setAddModalTab] = useState<'card' | 'subpage'>('card');
   const [previewFlip, setPreviewFlip] = useState<'front' | 'back'>('front');
   const [savingProduct, setSavingProduct] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -99,10 +108,21 @@ export default function AdminDashboardPage() {
     frontImage: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=700&auto=format&fit=crop&q=80',
     backImage: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=700&auto=format&fit=crop&q=80',
     description: '240 GSM heavy combed cotton oversized streetwear tee with high-density anime manga print.',
+    subImages: ['', '', '', ''],
+    story: '240 GSM heavy combed cotton oversized streetwear tee with high-density anime manga print.',
+    features: [
+      '240+ GSM Heavyweight French Terry Cotton',
+      'High-Density Fade-Resistant Screen Print',
+      'Drop-Shoulder Streetwear Boxy Silhouette',
+      'Pre-Shrunk Compact Combed Yarn',
+    ],
+    care: DEFAULT_CARE,
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'] as ('S' | 'M' | 'L' | 'XL' | 'XXL')[],
   });
 
   // Edit / Update Product Modal State
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
+  const [editModalTab, setEditModalTab] = useState<'card' | 'subpage'>('card');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editFormData, setEditFormData] = useState({
     id: '',
@@ -119,6 +139,11 @@ export default function AdminDashboardPage() {
     frontImage: '',
     backImage: '',
     description: '',
+    subImages: ['', '', '', ''],
+    story: '',
+    features: ['', '', '', ''],
+    care: '',
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'] as ('S' | 'M' | 'L' | 'XL' | 'XXL')[],
   });
   const [editPreviewFlip, setEditPreviewFlip] = useState<'front' | 'back'>('front');
   const [updatingProduct, setUpdatingProduct] = useState(false);
@@ -237,6 +262,7 @@ export default function AdminDashboardPage() {
 
   // Open Edit Card Modal
   const handleOpenEdit = (p: Product) => {
+    const details = parseProductDetails(p.description);
     setEditingProduct(p);
     setEditFormData({
       id: p.id,
@@ -253,8 +279,24 @@ export default function AdminDashboardPage() {
       frontImage: p.frontImage,
       backImage: p.backImage,
       description: p.description,
+      subImages: [
+        (p.subImages && p.subImages[0]) || details.subImages[0] || '',
+        (p.subImages && p.subImages[1]) || details.subImages[1] || '',
+        (p.subImages && p.subImages[2]) || details.subImages[2] || '',
+        (p.subImages && p.subImages[3]) || details.subImages[3] || '',
+      ],
+      story: details.story || p.description,
+      features: [
+        (p.features && p.features[0]) || details.features[0] || DEFAULT_FEATURES[0],
+        (p.features && p.features[1]) || details.features[1] || DEFAULT_FEATURES[1],
+        (p.features && p.features[2]) || details.features[2] || DEFAULT_FEATURES[2],
+        (p.features && p.features[3]) || details.features[3] || DEFAULT_FEATURES[3],
+      ],
+      care: p.careInstructions || details.care || DEFAULT_CARE,
+      sizes: (p.sizes && p.sizes.length > 0 ? p.sizes : details.sizes) || DEFAULT_SIZES,
     });
     setEditPreviewFlip('front');
+    setEditModalTab('card');
     setIsEditProductOpen(true);
   };
 
@@ -266,6 +308,14 @@ export default function AdminDashboardPage() {
       if (editFormData.featuredOnHome) {
         await supabase.from('products').update({ featured_on_home: false }).neq('id', editFormData.id);
       }
+
+      const packedDescription = packProductDetails({
+        story: editFormData.story || editFormData.description,
+        subImages: editFormData.subImages.filter(Boolean),
+        features: editFormData.features.filter(Boolean),
+        care: editFormData.care,
+        sizes: editFormData.sizes,
+      });
 
       const { error } = await supabase
         .from('products')
@@ -280,7 +330,7 @@ export default function AdminDashboardPage() {
           stock_left: Number(editFormData.stockLeft),
           front_image: editFormData.frontImage.trim(),
           back_image: editFormData.backImage.trim(),
-          description: editFormData.description.trim(),
+          description: packedDescription,
           featured_on_home: editFormData.featuredOnHome,
         })
         .eq('id', editFormData.id);
@@ -289,7 +339,7 @@ export default function AdminDashboardPage() {
         alert('Failed to update product: ' + error.message);
       } else {
         await refreshProducts();
-        alert('🎉 Product card updated successfully!');
+        alert('🎉 Product card & Sub-Page updated successfully!');
         setIsEditProductOpen(false);
       }
     } catch (err) {
@@ -316,6 +366,14 @@ export default function AdminDashboardPage() {
         }
       }
 
+      const packedDescription = packProductDetails({
+        story: newProduct.story || newProduct.description,
+        subImages: newProduct.subImages.filter(Boolean),
+        features: newProduct.features.filter(Boolean),
+        care: newProduct.care,
+        sizes: newProduct.sizes,
+      });
+
       const { error } = await supabase.from('products').insert([
         {
           name: newProduct.name.trim(),
@@ -329,7 +387,7 @@ export default function AdminDashboardPage() {
           stock_left: Number(newProduct.stockLeft),
           front_image: newProduct.frontImage.trim(),
           back_image: newProduct.backImage.trim(),
-          description: newProduct.description.trim(),
+          description: packedDescription,
           featured_on_home: newProduct.featuredOnHome,
           in_stock: true,
         },
@@ -339,7 +397,7 @@ export default function AdminDashboardPage() {
         alert('Could not save to Supabase: ' + error.message);
       } else {
         await refreshProducts();
-        alert('🎉 New T-Shirt Drop published live to the store!');
+        alert('🎉 New T-Shirt Drop published live with full Sub-Page details!');
         setIsAddProductOpen(false);
       }
     } catch (err) {
@@ -723,10 +781,10 @@ export default function AdminDashboardPage() {
                     <Link
                       href={`/products/${p.slug}`}
                       target="_blank"
-                      className="w-full py-2 rounded-xl bg-zinc-950 text-zinc-300 hover:text-white hover:bg-black border border-zinc-800 font-bold text-xs font-mono text-center transition-all shadow-xs flex items-center justify-center gap-1"
+                      className="w-full py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 font-bold text-xs font-mono text-center transition-all shadow-xs flex items-center justify-center gap-1.5"
                     >
-                      <span>Preview in Store</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <span>👁️ View T-Shirt Sub-Page</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-rose-500" />
                     </Link>
                   </div>
                 );
@@ -997,185 +1055,333 @@ export default function AdminDashboardPage() {
               </p>
             </div>
 
+            {/* Tab Switcher: Card vs Sub-Page */}
+            <div className="flex items-center gap-2 p-1 rounded-2xl bg-zinc-950 border border-zinc-800 mb-6">
+              <button
+                type="button"
+                onClick={() => setEditModalTab('card')}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  editModalTab === 'card'
+                    ? 'bg-zinc-800 text-white shadow-xs'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5 text-blue-400" />
+                <span>1. Card Main Settings</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditModalTab('subpage')}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  editModalTab === 'subpage'
+                    ? 'bg-zinc-800 text-white shadow-xs'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                <span>2. T-Shirt Sub-Page Details</span>
+              </button>
+            </div>
+
             <form onSubmit={handleUpdateProduct} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Form Inputs (7 Cols) */}
               <div className="lg:col-span-7 space-y-4">
-                {/* T-Shirt Name */}
-                <div>
-                  <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                    T-Shirt Name *
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    value={editFormData.name}
-                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Series & Category */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                      Anime Series / Tag *
-                    </label>
-                    <input
-                      required
-                      type="text"
-                      value={editFormData.animeSeries}
-                      onChange={(e) => setEditFormData({ ...editFormData, animeSeries: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                      Category *
-                    </label>
-                    <select
-                      value={editFormData.category}
-                      onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                    >
-                      <option value="oversized" className="bg-zinc-900">Oversized Boxy Fit</option>
-                      <option value="acid-wash" className="bg-zinc-900">Vintage Acid Washed</option>
-                      <option value="graphic-tees" className="bg-zinc-900">Graphic Prints</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Pricing: Selling Price vs MRP */}
-                <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800">
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-200 font-bold uppercase mb-1">
-                      Selling Price ₹ (Offer Price) *
-                    </label>
-                    <input
-                      required
-                      type="number"
-                      value={editFormData.price}
-                      onChange={(e) => setEditFormData({ ...editFormData, price: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-mono text-white focus:outline-none"
-                    />
-                    <span className="text-[10px] text-zinc-400 font-mono">Customer pays this</span>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-200 font-bold uppercase mb-1">
-                      MRP / Strike Price ₹ (Cross Line) *
-                    </label>
-                    <input
-                      required
-                      type="number"
-                      value={editFormData.originalPrice}
-                      onChange={(e) => setEditFormData({ ...editFormData, originalPrice: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-mono text-white focus:outline-none"
-                    />
-                    <span className="text-[10px] text-zinc-400 font-mono">Crossed out on website</span>
-                  </div>
-
-                  {editDiscountPercent && (
-                    <div className="col-span-2 pt-1 text-xs font-mono text-emerald-400 flex items-center justify-between border-t border-zinc-800">
-                      <span>Discount: <strong>{editDiscountPercent}% OFF</strong></span>
-                      <span>Customer Saves: <strong>₹{editFormData.originalPrice - editFormData.price}</strong></span>
-                    </div>
-                  )}
-                </div>
-
-                {/* GSM & Stock */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                      Fabric GSM *
-                    </label>
-                    <input
-                      required
-                      type="number"
-                      value={editFormData.gsm}
-                      onChange={(e) => setEditFormData({ ...editFormData, gsm: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                      Stock Pieces Available *
-                    </label>
-                    <input
-                      required
-                      type="number"
-                      value={editFormData.stockLeft}
-                      onChange={(e) => setEditFormData({ ...editFormData, stockLeft: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Front Image URL ONLY */}
-                <div>
-                  <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                    Front Mockup Image URL *
-                  </label>
-                  <input
-                    required
-                    type="url"
-                    value={editFormData.frontImage}
-                    onChange={(e) => setEditFormData({ ...editFormData, frontImage: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
-                  />
-                </div>
-
-                {/* Back Image URL ONLY */}
-                <div>
-                  <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                    Back Manga Graphic URL *
-                  </label>
-                  <input
-                    required
-                    type="url"
-                    value={editFormData.backImage}
-                    onChange={(e) => setEditFormData({ ...editFormData, backImage: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                    Product Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={editFormData.description}
-                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                  />
-                </div>
-
-                {/* Hero Star Checkbox */}
-                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-400/10 border border-amber-400/30">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                {editModalTab === 'card' ? (
+                  <>
+                    {/* T-Shirt Name */}
                     <div>
-                      <h4 className="text-xs font-bold text-white font-mono">Showcase in Homepage Hero</h4>
-                      <p className="text-[11px] text-zinc-400">Sets this tee as the main 3D banner on homepage</p>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        T-Shirt Name *
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={editFormData.name}
+                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={editFormData.featuredOnHome}
-                    onChange={(e) => setEditFormData({ ...editFormData, featuredOnHome: e.target.checked })}
-                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
-                  />
-                </div>
+
+                    {/* Series & Category */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                          Anime Series / Tag *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          value={editFormData.animeSeries}
+                          onChange={(e) => setEditFormData({ ...editFormData, animeSeries: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                          Category *
+                        </label>
+                        <select
+                          value={editFormData.category}
+                          onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value as any })}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                        >
+                          <option value="oversized" className="bg-zinc-900">Oversized Boxy Fit</option>
+                          <option value="acid-wash" className="bg-zinc-900">Vintage Acid Washed</option>
+                          <option value="graphic-tees" className="bg-zinc-900">Graphic Prints</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Pricing: Selling Price vs MRP */}
+                    <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800">
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-200 font-bold uppercase mb-1">
+                          Selling Price ₹ (Offer Price) *
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          value={editFormData.price}
+                          onChange={(e) => setEditFormData({ ...editFormData, price: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-mono text-white focus:outline-none"
+                        />
+                        <span className="text-[10px] text-zinc-400 font-mono">Customer pays this</span>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-200 font-bold uppercase mb-1">
+                          MRP / Strike Price ₹ (Cross Line) *
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          value={editFormData.originalPrice}
+                          onChange={(e) => setEditFormData({ ...editFormData, originalPrice: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-mono text-white focus:outline-none"
+                        />
+                        <span className="text-[10px] text-zinc-400 font-mono">Crossed out on website</span>
+                      </div>
+
+                      {editDiscountPercent && (
+                        <div className="col-span-2 pt-1 text-xs font-mono text-emerald-400 flex items-center justify-between border-t border-zinc-800">
+                          <span>Discount: <strong>{editDiscountPercent}% OFF</strong></span>
+                          <span>Customer Saves: <strong>₹{editFormData.originalPrice - editFormData.price}</strong></span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* GSM & Stock */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                          Fabric GSM *
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          value={editFormData.gsm}
+                          onChange={(e) => setEditFormData({ ...editFormData, gsm: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                          Stock Pieces Available *
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          value={editFormData.stockLeft}
+                          onChange={(e) => setEditFormData({ ...editFormData, stockLeft: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Front Image URL ONLY */}
+                    <div>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        Front Mockup Image URL *
+                      </label>
+                      <input
+                        required
+                        type="url"
+                        value={editFormData.frontImage}
+                        onChange={(e) => setEditFormData({ ...editFormData, frontImage: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    {/* Back Image URL ONLY */}
+                    <div>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        Back Manga Graphic URL *
+                      </label>
+                      <input
+                        required
+                        type="url"
+                        value={editFormData.backImage}
+                        onChange={(e) => setEditFormData({ ...editFormData, backImage: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    {/* Hero Star Checkbox */}
+                    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-400/10 border border-amber-400/30">
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                        <div>
+                          <h4 className="text-xs font-bold text-white font-mono">Showcase in Homepage Hero</h4>
+                          <p className="text-[11px] text-zinc-400">Sets this tee as the main 3D banner on homepage</p>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={editFormData.featuredOnHome}
+                        onChange={(e) => setEditFormData({ ...editFormData, featuredOnHome: e.target.checked })}
+                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* SUB-PAGE SETTINGS */}
+                    <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-mono text-rose-400 font-bold uppercase flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Sub-Page Gallery Images (Up to 4 Extra Views)</span>
+                        </label>
+                        <span className="text-[10px] text-zinc-400 font-mono">Optional</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400">
+                        Paste URLs for close-up print, model fit, fabric texture, or side angle views.
+                      </p>
+
+                      {[
+                        { label: 'Sub-Image 1 (Chest Graphic Close-Up URL)', placeholder: 'https://images.unsplash.com/photo-...' },
+                        { label: 'Sub-Image 2 (Model Fit / Wearing Look URL)', placeholder: 'https://images.unsplash.com/photo-...' },
+                        { label: 'Sub-Image 3 (Fabric Texture / 240 GSM URL)', placeholder: 'https://images.unsplash.com/photo-...' },
+                        { label: 'Sub-Image 4 (Back Angle / Collar Detail URL)', placeholder: 'https://images.unsplash.com/photo-...' },
+                      ].map((slot, idx) => (
+                        <div key={idx} className="flex items-center gap-2.5">
+                          <div className="flex-1">
+                            <span className="text-[10px] font-mono text-zinc-300 block mb-0.5">{slot.label}</span>
+                            <input
+                              type="url"
+                              placeholder={slot.placeholder}
+                              value={editFormData.subImages[idx] || ''}
+                              onChange={(e) => {
+                                const updated = [...editFormData.subImages];
+                                updated[idx] = e.target.value;
+                                setEditFormData({ ...editFormData, subImages: updated });
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
+                            />
+                          </div>
+                          {editFormData.subImages[idx] && (
+                            <div className="w-12 h-14 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900 flex-shrink-0 mt-3">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={editFormData.subImages[idx]} alt="Preview" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Story / Anime Lore */}
+                    <div>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        T-Shirt Story & Anime Lore *
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={editFormData.story}
+                        onChange={(e) => setEditFormData({ ...editFormData, story: e.target.value })}
+                        placeholder="Describe the drop storyline, anime manga chapter inspiration, and drape feel..."
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Key Highlights / Bullets */}
+                    <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-2">
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase">
+                        Key Feature Highlights (Bullet Points)
+                      </label>
+                      {editFormData.features.map((feat, idx) => (
+                        <input
+                          key={idx}
+                          type="text"
+                          value={feat}
+                          onChange={(e) => {
+                            const updated = [...editFormData.features];
+                            updated[idx] = e.target.value;
+                            setEditFormData({ ...editFormData, features: updated });
+                          }}
+                          placeholder={`Feature bullet ${idx + 1}`}
+                          className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
+                        />
+                      ))}
+                    </div>
+
+                    {/* Available Sizes Toggle */}
+                    <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-2">
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase">
+                        Available Sizes in Stock
+                      </label>
+                      <div className="flex items-center gap-2">
+                        {DEFAULT_SIZES.map((sz) => {
+                          const isSelected = editFormData.sizes.includes(sz);
+                          return (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => {
+                                const nextSizes = isSelected
+                                  ? editFormData.sizes.filter((s) => s !== sz)
+                                  : [...editFormData.sizes, sz];
+                                setEditFormData({ ...editFormData, sizes: nextSizes });
+                              }}
+                              className={`py-2 px-3.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-rose-600 text-white shadow-xs'
+                                  : 'bg-zinc-900 text-zinc-500 border border-zinc-800 hover:text-zinc-300'
+                              }`}
+                            >
+                              {sz} {isSelected ? '✓' : ''}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 font-mono">
+                        Click to toggle sizes. Unchecked sizes will be marked unavailable.
+                      </span>
+                    </div>
+
+                    {/* Wash & Care Notes */}
+                    <div>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        Wash & Care Advice
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.care}
+                        onChange={(e) => setEditFormData({ ...editFormData, care: e.target.value })}
+                        placeholder="e.g. Machine wash cold inside-out with mild detergent. Do not iron directly on print."
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <button
                   type="submit"
                   disabled={updatingProduct}
-                  className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm font-mono tracking-wide transition-all cursor-pointer shadow-md disabled:opacity-70"
+                  className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm font-mono tracking-wide transition-all cursor-pointer shadow-md disabled:opacity-70 mt-4"
                 >
-                  {updatingProduct ? 'SAVING CHANGES TO SUPABASE...' : 'SAVE & UPDATE PRODUCT CARD'}
+                  {updatingProduct ? 'SAVING CHANGES TO SUPABASE...' : 'SAVE & UPDATE PRODUCT CARD & SUB-PAGE'}
                 </button>
               </div>
 
@@ -1292,199 +1498,347 @@ export default function AdminDashboardPage() {
               </p>
             </div>
 
+            {/* Tab Switcher: Card vs Sub-Page */}
+            <div className="flex items-center gap-2 p-1 rounded-2xl bg-zinc-950 border border-zinc-800 mb-6">
+              <button
+                type="button"
+                onClick={() => setAddModalTab('card')}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  addModalTab === 'card'
+                    ? 'bg-zinc-800 text-white shadow-xs'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5 text-rose-400" />
+                <span>1. Card Main Settings</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddModalTab('subpage')}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  addModalTab === 'subpage'
+                    ? 'bg-zinc-800 text-white shadow-xs'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                <span>2. T-Shirt Sub-Page Details</span>
+              </button>
+            </div>
+
             <form onSubmit={handleCreateProduct} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Form Inputs (7 Cols) */}
               <div className="lg:col-span-7 space-y-4">
-                {/* T-Shirt Name */}
-                <div>
-                  <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                    T-Shirt Name *
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. DOMAIN EXPANSION // VOID OVERSIZED TEE"
-                    value={newProduct.name}
-                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  />
-                </div>
-
-                {/* Series & Category */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                      Anime Series / Tag *
-                    </label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="e.g. Jujutsu Special"
-                      value={newProduct.animeSeries}
-                      onChange={(e) => setNewProduct({ ...newProduct, animeSeries: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                      Category *
-                    </label>
-                    <select
-                      value={newProduct.category}
-                      onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                    >
-                      <option value="oversized" className="bg-zinc-900">Oversized Boxy Fit</option>
-                      <option value="acid-wash" className="bg-zinc-900">Vintage Acid Washed</option>
-                      <option value="graphic-tees" className="bg-zinc-900">Graphic Prints</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Pricing: Selling Price vs MRP */}
-                <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800">
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-200 font-bold uppercase mb-1">
-                      Selling Price ₹ (Offer Price) *
-                    </label>
-                    <input
-                      required
-                      type="number"
-                      placeholder="899"
-                      value={newProduct.price}
-                      onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-mono text-white focus:outline-none"
-                    />
-                    <span className="text-[10px] text-zinc-400 font-mono">Amount customer pays</span>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-200 font-bold uppercase mb-1">
-                      MRP / Original Price ₹ (Strike Line) *
-                    </label>
-                    <input
-                      required
-                      type="number"
-                      placeholder="1499"
-                      value={newProduct.originalPrice}
-                      onChange={(e) => setNewProduct({ ...newProduct, originalPrice: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-mono text-white focus:outline-none"
-                    />
-                    <span className="text-[10px] text-zinc-400 font-mono">Crossed out on website</span>
-                  </div>
-
-                  {modalDiscountPercent && (
-                    <div className="col-span-2 pt-1 text-xs font-mono text-emerald-400 flex items-center justify-between border-t border-zinc-800">
-                      <span>Discount: <strong>{modalDiscountPercent}% OFF</strong></span>
-                      <span>Customer Saves: <strong>₹{newProduct.originalPrice - newProduct.price}</strong></span>
-                    </div>
-                  )}
-                </div>
-
-                {/* GSM & Stock */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                      Fabric GSM *
-                    </label>
-                    <input
-                      required
-                      type="number"
-                      placeholder="240"
-                      value={newProduct.gsm}
-                      onChange={(e) => setNewProduct({ ...newProduct, gsm: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                      Initial Stock Left *
-                    </label>
-                    <input
-                      required
-                      type="number"
-                      placeholder="20"
-                      value={newProduct.stockLeft}
-                      onChange={(e) => setNewProduct({ ...newProduct, stockLeft: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Front Image URL ONLY */}
-                <div>
-                  <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                    Front Mockup Image URL *
-                  </label>
-                  <input
-                    required
-                    type="url"
-                    placeholder="https://images.unsplash.com/photo-..."
-                    value={newProduct.frontImage}
-                    onChange={(e) => setNewProduct({ ...newProduct, frontImage: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
-                  />
-                  <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">
-                    Paste any public image link (Unsplash, Imgur, Supabase storage, etc.)
-                  </span>
-                </div>
-
-                {/* Back Image URL ONLY */}
-                <div>
-                  <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                    Back Manga Graphic URL *
-                  </label>
-                  <input
-                    required
-                    type="url"
-                    placeholder="https://images.unsplash.com/photo-..."
-                    value={newProduct.backImage}
-                    onChange={(e) => setNewProduct({ ...newProduct, backImage: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
-                  />
-                  <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">
-                    Shows when customer toggles front/back or hovers on card
-                  </span>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
-                    Product Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={newProduct.description}
-                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
-                  />
-                </div>
-
-                {/* Toggle: Homepage Hero */}
-                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-400/10 border border-amber-400/30">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                {addModalTab === 'card' ? (
+                  <>
+                    {/* T-Shirt Name */}
                     <div>
-                      <h4 className="text-xs font-bold text-white font-mono">Set as Homepage Hero Showcase</h4>
-                      <p className="text-[11px] text-zinc-400">Feature this tee in the 3D interactive hero banner</p>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        T-Shirt Name *
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="e.g. DOMAIN EXPANSION // VOID OVERSIZED TEE"
+                        value={newProduct.name}
+                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      />
                     </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={newProduct.featuredOnHome}
-                    onChange={(e) => setNewProduct({ ...newProduct, featuredOnHome: e.target.checked })}
-                    className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
-                  />
-                </div>
+
+                    {/* Series & Category */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                          Anime Series / Tag *
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          placeholder="e.g. Jujutsu Special"
+                          value={newProduct.animeSeries}
+                          onChange={(e) => setNewProduct({ ...newProduct, animeSeries: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                          Category *
+                        </label>
+                        <select
+                          value={newProduct.category}
+                          onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value as any })}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                        >
+                          <option value="oversized" className="bg-zinc-900">Oversized Boxy Fit</option>
+                          <option value="acid-wash" className="bg-zinc-900">Vintage Acid Washed</option>
+                          <option value="graphic-tees" className="bg-zinc-900">Graphic Prints</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Pricing: Selling Price vs MRP */}
+                    <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800">
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-200 font-bold uppercase mb-1">
+                          Selling Price ₹ (Offer Price) *
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          placeholder="899"
+                          value={newProduct.price}
+                          onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-mono text-white focus:outline-none"
+                        />
+                        <span className="text-[10px] text-zinc-400 font-mono">Amount customer pays</span>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-200 font-bold uppercase mb-1">
+                          MRP / Original Price ₹ (Strike Line) *
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          placeholder="1499"
+                          value={newProduct.originalPrice}
+                          onChange={(e) => setNewProduct({ ...newProduct, originalPrice: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-mono text-white focus:outline-none"
+                        />
+                        <span className="text-[10px] text-zinc-400 font-mono">Crossed out on website</span>
+                      </div>
+
+                      {modalDiscountPercent && (
+                        <div className="col-span-2 pt-1 text-xs font-mono text-emerald-400 flex items-center justify-between border-t border-zinc-800">
+                          <span>Discount: <strong>{modalDiscountPercent}% OFF</strong></span>
+                          <span>Customer Saves: <strong>₹{newProduct.originalPrice - newProduct.price}</strong></span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* GSM & Stock */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                          Fabric GSM *
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          placeholder="240"
+                          value={newProduct.gsm}
+                          onChange={(e) => setNewProduct({ ...newProduct, gsm: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                          Initial Stock Left *
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          placeholder="20"
+                          value={newProduct.stockLeft}
+                          onChange={(e) => setNewProduct({ ...newProduct, stockLeft: Number(e.target.value) })}
+                          className="w-full px-3.5 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Front Image URL ONLY */}
+                    <div>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        Front Mockup Image URL *
+                      </label>
+                      <input
+                        required
+                        type="url"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={newProduct.frontImage}
+                        onChange={(e) => setNewProduct({ ...newProduct, frontImage: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
+                      />
+                      <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">
+                        Paste any public image link (Unsplash, Imgur, Supabase storage, etc.)
+                      </span>
+                    </div>
+
+                    {/* Back Image URL ONLY */}
+                    <div>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        Back Manga Graphic URL *
+                      </label>
+                      <input
+                        required
+                        type="url"
+                        placeholder="https://images.unsplash.com/photo-..."
+                        value={newProduct.backImage}
+                        onChange={(e) => setNewProduct({ ...newProduct, backImage: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
+                      />
+                      <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">
+                        Shows when customer toggles front/back or hovers on card
+                      </span>
+                    </div>
+
+                    {/* Toggle: Homepage Hero */}
+                    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-amber-400/10 border border-amber-400/30">
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                        <div>
+                          <h4 className="text-xs font-bold text-white font-mono">Set as Homepage Hero Showcase</h4>
+                          <p className="text-[11px] text-zinc-400">Feature this tee in the 3D interactive hero banner</p>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={newProduct.featuredOnHome}
+                        onChange={(e) => setNewProduct({ ...newProduct, featuredOnHome: e.target.checked })}
+                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* SUB-PAGE SETTINGS */}
+                    <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-mono text-rose-400 font-bold uppercase flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Sub-Page Gallery Images (Up to 4 Extra Views)</span>
+                        </label>
+                        <span className="text-[10px] text-zinc-400 font-mono">Optional</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400">
+                        Paste URLs for close-up print, model fit, fabric texture, or side angle views.
+                      </p>
+
+                      {[
+                        { label: 'Sub-Image 1 (Chest Graphic Close-Up URL)', placeholder: 'https://images.unsplash.com/photo-...' },
+                        { label: 'Sub-Image 2 (Model Fit / Wearing Look URL)', placeholder: 'https://images.unsplash.com/photo-...' },
+                        { label: 'Sub-Image 3 (Fabric Texture / 240 GSM URL)', placeholder: 'https://images.unsplash.com/photo-...' },
+                        { label: 'Sub-Image 4 (Back Angle / Collar Detail URL)', placeholder: 'https://images.unsplash.com/photo-...' },
+                      ].map((slot, idx) => (
+                        <div key={idx} className="flex items-center gap-2.5">
+                          <div className="flex-1">
+                            <span className="text-[10px] font-mono text-zinc-300 block mb-0.5">{slot.label}</span>
+                            <input
+                              type="url"
+                              placeholder={slot.placeholder}
+                              value={newProduct.subImages[idx] || ''}
+                              onChange={(e) => {
+                                const updated = [...newProduct.subImages];
+                                updated[idx] = e.target.value;
+                                setNewProduct({ ...newProduct, subImages: updated });
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
+                            />
+                          </div>
+                          {newProduct.subImages[idx] && (
+                            <div className="w-12 h-14 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900 flex-shrink-0 mt-3">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={newProduct.subImages[idx]} alt="Preview" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Story / Anime Lore */}
+                    <div>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        T-Shirt Story & Anime Lore *
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={newProduct.story}
+                        onChange={(e) => setNewProduct({ ...newProduct, story: e.target.value })}
+                        placeholder="Describe the drop storyline, anime manga chapter inspiration, and drape feel..."
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Key Highlights / Bullets */}
+                    <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-2">
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase">
+                        Key Feature Highlights (Bullet Points)
+                      </label>
+                      {newProduct.features.map((feat, idx) => (
+                        <input
+                          key={idx}
+                          type="text"
+                          value={feat}
+                          onChange={(e) => {
+                            const updated = [...newProduct.features];
+                            updated[idx] = e.target.value;
+                            setNewProduct({ ...newProduct, features: updated });
+                          }}
+                          placeholder={`Feature bullet ${idx + 1}`}
+                          className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none font-mono"
+                        />
+                      ))}
+                    </div>
+
+                    {/* Available Sizes Toggle */}
+                    <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-2">
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase">
+                        Available Sizes in Stock
+                      </label>
+                      <div className="flex items-center gap-2">
+                        {DEFAULT_SIZES.map((sz) => {
+                          const isSelected = newProduct.sizes.includes(sz);
+                          return (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => {
+                                const nextSizes = isSelected
+                                  ? newProduct.sizes.filter((s) => s !== sz)
+                                  : [...newProduct.sizes, sz];
+                                setNewProduct({ ...newProduct, sizes: nextSizes });
+                              }}
+                              className={`py-2 px-3.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-rose-600 text-white shadow-xs'
+                                  : 'bg-zinc-900 text-zinc-500 border border-zinc-800 hover:text-zinc-300'
+                              }`}
+                            >
+                              {sz} {isSelected ? '✓' : ''}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 font-mono">
+                        Click to toggle sizes. Unchecked sizes will be marked unavailable.
+                      </span>
+                    </div>
+
+                    {/* Wash & Care Notes */}
+                    <div>
+                      <label className="block text-[11px] font-mono text-zinc-300 font-bold uppercase mb-1">
+                        Wash & Care Advice
+                      </label>
+                      <input
+                        type="text"
+                        value={newProduct.care}
+                        onChange={(e) => setNewProduct({ ...newProduct, care: e.target.value })}
+                        placeholder="e.g. Machine wash cold inside-out with mild detergent. Do not iron directly on print."
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <button
                   type="submit"
                   disabled={savingProduct}
-                  className="w-full py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm font-mono tracking-wide transition-all cursor-pointer shadow-md disabled:opacity-70"
+                  className="w-full py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm font-mono tracking-wide transition-all cursor-pointer shadow-md disabled:opacity-70 mt-4"
                 >
-                  {savingProduct ? 'SAVING TO SUPABASE...' : 'PUBLISH & LIST IN STORE'}
+                  {savingProduct ? 'SAVING TO SUPABASE...' : 'PUBLISH & LIST IN STORE WITH SUB-PAGE'}
                 </button>
               </div>
 

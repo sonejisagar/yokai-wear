@@ -12,6 +12,9 @@ export interface Product {
   stockLeft: number; // Limited stock indicator for startup exclusivity
   frontImage: string;
   backImage: string;
+  subImages?: string[];
+  features?: string[];
+  careInstructions?: string;
   colors: { name: string; hex: string }[];
   sizes: ('S' | 'M' | 'L' | 'XL' | 'XXL')[];
   inStock: boolean;

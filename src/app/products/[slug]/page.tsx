@@ -2,9 +2,9 @@ import { notFound } from 'next/navigation';
 import { animeProducts } from '@/data/products';
 import ProductDetailContent from '@/components/ProductDetailContent';
 import type { Metadata } from 'next';
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
 import { Product } from '@/types';
+import { createClient } from '@supabase/supabase-js';
+import { parseProductDetails } from '@/utils/productDetails';
 
 export function generateStaticParams() {
   return animeProducts.map((product) => ({
@@ -12,41 +12,61 @@ export function generateStaticParams() {
   }));
 }
 
+export const instant = false;
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
 async function getProduct(slug: string): Promise<Product | null> {
+  // 1. Try fetching live from Supabase
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (!error && data) {
+        const details = parseProductDetails(data.description);
+        return {
+          id: data.id,
+          name: data.name,
+          slug: data.slug,
+          price: Number(data.price),
+          originalPrice: data.original_price ? Number(data.original_price) : undefined,
+          description: details.story || 'Premium 240+ GSM heavyweight oversized anime streetwear tee.',
+          subImages: details.subImages,
+          features: details.features,
+          careInstructions: details.care,
+          category: data.category || 'oversized',
+          animeSeries: data.anime_series || 'Special Drop',
+          fit: data.fit || 'Oversized Boxy Fit',
+          gsm: Number(data.gsm) || 240,
+          stockLeft: Number(data.stock_left) ?? 15,
+          frontImage: data.front_image,
+          backImage: data.back_image || data.front_image,
+          colors: [
+            { name: 'Pitch Black', hex: '#121212' },
+            { name: 'Off White', hex: '#f4f4f5' },
+          ],
+          sizes: details.sizes && details.sizes.length > 0 ? details.sizes : ['S', 'M', 'L', 'XL', 'XXL'],
+          inStock: data.in_stock !== false,
+          featuredOnHome: Boolean(data.featured_on_home),
+        };
+      }
+    } catch (e) {
+      console.warn('Notice querying dynamic product from Supabase:', e);
+    }
+  }
+
+  // 2. Fallback to local static catalog
   const local = animeProducts.find((p) => p.slug === slug);
   if (local) return local;
-
-  try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const { data } = await supabase.from('products').select('*').eq('slug', slug).single();
-    if (data) {
-      return {
-        id: data.id,
-        name: data.name,
-        slug: data.slug,
-        price: Number(data.price),
-        originalPrice: data.original_price ? Number(data.original_price) : undefined,
-        description: data.description || 'Premium 240+ GSM heavyweight oversized anime streetwear tee.',
-        category: data.category || 'oversized',
-        animeSeries: data.anime_series || 'Special Drop',
-        fit: data.fit || 'Oversized Boxy Fit',
-        gsm: Number(data.gsm) || 240,
-        stockLeft: Number(data.stock_left) ?? 15,
-        frontImage: data.front_image,
-        backImage: data.back_image || data.front_image,
-        colors: [
-          { name: 'Pitch Black', hex: '#121212' },
-          { name: 'Off White', hex: '#f4f4f5' },
-        ],
-        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-        inStock: data.in_stock !== false,
-        featuredOnHome: Boolean(data.featured_on_home),
-      };
-    }
-  } catch (e) {
-    console.warn('Could not fetch dynamic product:', e);
-  }
 
   return null;
 }

@@ -5,6 +5,8 @@ import { Product } from '@/types';
 import { animeProducts } from '@/data/products';
 import { supabase } from '@/lib/supabase';
 
+import { parseProductDetails } from '@/utils/productDetails';
+
 interface ProductContextType {
   products: Product[];
   isLoading: boolean;
@@ -30,13 +32,17 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
         setProducts(animeProducts);
       } else if (data && data.length > 0) {
         const formatted: Product[] = data.map((item: any, idx: number) => {
+          const details = parseProductDetails(item.description);
           return {
             id: item.id || `sp-${idx}`,
             name: item.name,
             slug: item.slug || item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
             price: Number(item.price),
             originalPrice: item.original_price ? Number(item.original_price) : undefined,
-            description: item.description || 'Premium 240+ GSM heavyweight oversized anime streetwear tee.',
+            description: details.story || 'Premium 240+ GSM heavyweight oversized anime streetwear tee.',
+            subImages: details.subImages,
+            features: details.features,
+            careInstructions: details.care,
             category: item.category || 'oversized',
             animeSeries: item.anime_series || 'Special Drop',
             fit: (item.fit as any) || 'Oversized Boxy Fit',
@@ -48,7 +54,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
               { name: 'Pitch Black', hex: '#121212' },
               { name: 'Off White', hex: '#f4f4f5' },
             ],
-            sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+            sizes: details.sizes && details.sizes.length > 0 ? details.sizes : ['S', 'M', 'L', 'XL', 'XXL'],
             inStock: item.in_stock !== false,
             isHot: idx === 0,
             isNew: true,

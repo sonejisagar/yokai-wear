@@ -27,22 +27,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (saved) {
         setCart(JSON.parse(saved));
       } else {
-        setCart([
-          {
-            id: 'yokai-01-black-L',
-            productId: 'yokai-01',
-            name: 'LIMITLESS // SIX EYES OVERSIZED TEE',
-            price: 899,
-            image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=700&auto=format&fit=crop&q=80',
-            color: 'Pitch Black',
-            size: 'L',
-            quantity: 1,
-            gsm: 240,
-          },
-        ]);
+        setCart([]);
       }
     } catch {
-      // LocalStorage error fallback
+      setCart([]);
     }
   }, []);
 

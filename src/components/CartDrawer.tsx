@@ -1,14 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, Plus, Minus, Trash2, ArrowRight, Sparkles, Truck, ShieldCheck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import CheckoutModal from './CheckoutModal';
 
 export default function CartDrawer() {
+  const pathname = usePathname();
   const { isCartOpen, setIsCartOpen, cart, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   const freeShippingThreshold = 999;
   const progressToFreeShipping = Math.min(100, (totalPrice / freeShippingThreshold) * 100);

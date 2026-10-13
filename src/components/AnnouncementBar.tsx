@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Truck, Sparkles, ShieldCheck, X } from 'lucide-react';
 
@@ -23,8 +24,13 @@ const announcements = [
 ];
 
 export default function AnnouncementBar() {
+  const pathname = usePathname();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+
+  if (pathname?.startsWith('/admin') || !isVisible) {
+    return null;
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {

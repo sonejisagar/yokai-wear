@@ -15,6 +15,11 @@ export default function ProductCard({ product }: { product: Product }) {
   const [isLiked, setIsLiked] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
 
+  const discountPercent =
+    product.originalPrice && product.originalPrice > product.price
+      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+      : null;
+
   const { addToCart } = useCart();
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -74,6 +79,11 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.isNew && (
             <span className="flex items-center gap-1 bg-white/90 backdrop-blur-md border border-white text-zinc-900 text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
               <Sparkles className="w-2.5 h-2.5 text-amber-500" /> DROP 01
+            </span>
+          )}
+          {discountPercent && (
+            <span className="bg-emerald-500 text-white text-[9px] sm:text-[10px] font-mono font-black px-2 py-0.5 rounded-full w-max shadow-xs">
+              {discountPercent}% OFF
             </span>
           )}
           <span className="bg-white/85 backdrop-blur-md border border-white text-zinc-700 text-[9px] sm:text-[10px] font-mono font-bold px-2 py-0.5 rounded-full w-max shadow-xs">
@@ -188,13 +198,20 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Price & Add to Bag in ₹ */}
         <div className="flex items-center justify-between pt-2 border-t border-zinc-200/50">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-base sm:text-lg font-black text-zinc-950 font-mono">
-              ₹{product.price}
-            </span>
-            {product.originalPrice && (
-              <span className="text-[11px] sm:text-xs text-zinc-400 line-through font-mono">
-                ₹{product.originalPrice}
+          <div className="flex flex-col">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-base sm:text-lg font-black text-zinc-950 font-mono">
+                ₹{product.price}
+              </span>
+              {product.originalPrice && (
+                <span className="text-[11px] sm:text-xs text-zinc-400 line-through font-mono">
+                  ₹{product.originalPrice}
+                </span>
+              )}
+            </div>
+            {discountPercent && (
+              <span className="text-[10px] font-mono font-bold text-emerald-600">
+                Save ₹{product.originalPrice! - product.price} ({discountPercent}%)
               </span>
             )}
           </div>

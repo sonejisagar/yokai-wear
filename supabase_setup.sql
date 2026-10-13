@@ -18,9 +18,13 @@ CREATE TABLE IF NOT EXISTS products (
   stock_left INTEGER DEFAULT 20,
   front_image TEXT NOT NULL,
   back_image TEXT NOT NULL,
+  featured_on_home BOOLEAN DEFAULT false,
   in_stock BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Ensure column exists if table was already created earlier:
+ALTER TABLE products ADD COLUMN IF NOT EXISTS featured_on_home BOOLEAN DEFAULT false;
 
 -- 2. Create Orders Table
 CREATE TABLE IF NOT EXISTS orders (
@@ -58,6 +62,12 @@ CREATE POLICY "Allow public read products" ON products FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow public insert products" ON products;
 CREATE POLICY "Allow public insert products" ON products FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update products" ON products;
+CREATE POLICY "Allow public update products" ON products FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow public delete products" ON products;
+CREATE POLICY "Allow public delete products" ON products FOR DELETE USING (true);
 
 DROP POLICY IF EXISTS "Allow public order placement" ON orders;
 CREATE POLICY "Allow public order placement" ON orders FOR INSERT WITH CHECK (true);

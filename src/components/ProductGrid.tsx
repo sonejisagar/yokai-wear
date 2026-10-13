@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal } from 'lucide-react';
-import { animeProducts } from '@/data/products';
+import { useProducts } from '@/context/ProductContext';
 import ProductCard from './ProductCard';
 
 const categories = [
@@ -14,11 +14,12 @@ const categories = [
 ];
 
 export default function ProductGrid() {
+  const { products } = useProducts();
   const [activeCategory, setActiveCategory] = useState('all');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'gsm'>('featured');
 
   const filteredProducts = useMemo(() => {
-    let list = [...animeProducts];
+    let list = [...products];
 
     if (activeCategory !== 'all') {
       list = list.filter((p) => p.category === activeCategory);
@@ -33,7 +34,7 @@ export default function ProductGrid() {
     }
 
     return list;
-  }, [activeCategory, sortBy]);
+  }, [products, activeCategory, sortBy]);
 
   return (
     <section id="catalog" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">

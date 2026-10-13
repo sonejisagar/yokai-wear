@@ -16,6 +16,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useProducts } from '@/context/ProductContext';
 import ProductGrid from '@/components/ProductGrid';
 
 const animeTickerItems = [
@@ -31,21 +32,20 @@ const animeTickerItems = [
 
 export default function Home() {
   const { addToCart } = useCart();
+  const { heroProduct } = useProducts();
   const [showHeroBack, setShowHeroBack] = useState(false);
 
   const handleQuickAddHero = () => {
     addToCart({
-      id: 'yokai-01-black-L',
-      productId: 'yokai-01',
-      name: 'LIMITLESS // SIX EYES OVERSIZED TEE',
-      price: 899,
-      image: showHeroBack
-        ? 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=700&auto=format&fit=crop&q=80'
-        : 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=700&auto=format&fit=crop&q=80',
+      id: `${heroProduct.id}-black-L`,
+      productId: heroProduct.id,
+      name: heroProduct.name,
+      price: heroProduct.price,
+      image: showHeroBack ? heroProduct.backImage : heroProduct.frontImage,
       color: 'Pitch Black',
       size: 'L',
       quantity: 1,
-      gsm: 240,
+      gsm: heroProduct.gsm,
     });
   };
 
@@ -170,12 +170,8 @@ export default function Home() {
                 {/* Product Image */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={
-                    showHeroBack
-                      ? 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=900&auto=format&fit=crop&q=80'
-                      : 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=900&auto=format&fit=crop&q=80'
-                  }
-                  alt="Featured Anime T-Shirt"
+                  src={showHeroBack ? heroProduct.backImage : heroProduct.frontImage}
+                  alt={heroProduct.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-104"
                 />
 
@@ -185,7 +181,7 @@ export default function Home() {
                 {/* Badges on image */}
                 <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-white text-zinc-900 text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-mono flex items-center gap-1.5 shadow-2xs">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                  <span>LIMITED RUN: 14 LEFT</span>
+                  <span>LIMITED RUN: {heroProduct.stockLeft} LEFT</span>
                 </div>
 
                 {/* Front/Back Graphic Toggle */}
@@ -205,12 +201,14 @@ export default function Home() {
                     <div className="text-[10px] text-rose-600 font-mono uppercase tracking-wider font-semibold">
                       {showHeroBack ? 'Full Back Manga Panel' : 'Front Chest Graphic'}
                     </div>
-                    <h3 className="font-bold text-xs sm:text-sm text-zinc-950">LIMITLESS // SIX EYES</h3>
-                    <p className="text-[11px] text-zinc-500">240 GSM Oversized Fit</p>
+                    <h3 className="font-bold text-xs sm:text-sm text-zinc-950 line-clamp-1">{heroProduct.name}</h3>
+                    <p className="text-[11px] text-zinc-500">{heroProduct.gsm} GSM {heroProduct.fit}</p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-base sm:text-lg font-black text-zinc-950 font-mono">₹899</span>
-                    <p className="text-[10px] text-zinc-400 line-through font-mono">₹1,299</p>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-base sm:text-lg font-black text-zinc-950 font-mono">₹{heroProduct.price}</span>
+                    {heroProduct.originalPrice && (
+                      <p className="text-[10px] text-zinc-400 line-through font-mono">₹{heroProduct.originalPrice}</p>
+                    )}
                   </div>
                 </div>
               </div>

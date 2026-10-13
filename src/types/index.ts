@@ -17,6 +17,7 @@ export interface Product {
   inStock: boolean;
   isHot?: boolean;
   isNew?: boolean;
+  featuredOnHome?: boolean;
 }
 
 export interface CartItem {
